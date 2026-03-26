@@ -81,8 +81,8 @@ export default function Upload() {
   const handleVideoChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 500 * 1024 * 1024) {
-      toast.error('Video must be less than 500MB');
+    if (file.size > 100 * 1024 * 1024) {
+      toast.error('Video must be less than 100MB');
       return;
     }
     setVideoFile(file);
@@ -179,7 +179,7 @@ export default function Upload() {
                 <>
                   <Film size={40} className="dropzone__icon" />
                   <p className="dropzone__label">Click or drag to upload video</p>
-                  <p className="dropzone__sub">MP4, MOV, MKV, WebM — Max 500MB</p>
+                  <p className="dropzone__sub">MP4, MOV, MKV, WebM — Max 100MB</p>
                 </>
               )}
               <input ref={videoInputRef} type="file" accept="video/*" style={{ display: 'none' }} onChange={handleVideoChange} />

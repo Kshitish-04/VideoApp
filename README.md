@@ -184,7 +184,7 @@ LuminaStream uses a **pure black minimalist** design system:
 1. Log in → click **Upload**
 2. Fill in title, description, category
 3. Toggle **"Share to Community"** if you want it publicly visible without login
-4. Select a video file → **Upload**
+4. Select a video file (max **100MB**) → **Upload**
 
 ### Community Access
 - The `/community` page is public (no login required)
