@@ -1,8 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { insertVideo } from '../hooks/useSupabase';
-import { Upload as UploadIcon, Film, Image, Tag, AlignLeft, CheckCircle, X, CloudUpload } from 'lucide-react';
+import { Upload as UploadIcon, Film, Image, Tag, AlignLeft, CheckCircle, X, CloudUpload, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
@@ -31,7 +31,6 @@ async function uploadToCloudinary(file, resourceType = 'video', onProgress) {
         if (xhr.status === 200) {
           resolve(response);
         } else {
-          // Show the real Cloudinary error message
           const errMsg = response?.error?.message || `HTTP ${xhr.status}: Upload failed`;
           console.error('Cloudinary error:', response);
           reject(new Error(errMsg));
@@ -50,6 +49,7 @@ export default function Upload() {
   const navigate = useNavigate();
   const videoInputRef = useRef(null);
   const thumbInputRef = useRef(null);
+  const dropdownRef = useRef(null);
 
   const [form, setForm] = useState({
     title: '',
@@ -65,6 +65,18 @@ export default function Upload() {
   const [thumbProgress, setThumbProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [done, setDone] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const handleVideoChange = (e) => {
     const file = e.target.files[0];
@@ -93,11 +105,9 @@ export default function Upload() {
     toast.loading('Uploading video...', { id: 'upload' });
 
     try {
-      // Upload video
       const videoData = await uploadToCloudinary(videoFile, 'video', setVideoProgress);
       const videoUrl = videoData.secure_url;
 
-      // Upload thumbnail (optional)
       let thumbnailUrl = null;
       if (thumbFile) {
         toast.loading('Uploading thumbnail...', { id: 'upload' });
@@ -105,7 +115,6 @@ export default function Upload() {
         thumbnailUrl = thumbData.secure_url;
       }
 
-      // Insert into Supabase
       const { error } = await insertVideo({
         title: form.title,
         description: form.description,
@@ -150,7 +159,6 @@ export default function Upload() {
         <div className="upload__grid">
           {/* Left: Dropzones */}
           <div className="upload__dropzones">
-            {/* Video Dropzone */}
             <div
               className={`dropzone ${videoFile ? 'dropzone--filled' : ''}`}
               onClick={() => videoInputRef.current?.click()}
@@ -174,14 +182,9 @@ export default function Upload() {
                   <p className="dropzone__sub">MP4, MOV, MKV, WebM — Max 500MB</p>
                 </>
               )}
-              <input
-                ref={videoInputRef}
-                type="file"
-                accept="video/*"
-                style={{ display: 'none' }}
-                onChange={handleVideoChange}
-              />
+              <input ref={videoInputRef} type="file" accept="video/*" style={{ display: 'none' }} onChange={handleVideoChange} />
             </div>
+
             {uploading && videoProgress > 0 && (
               <div className="upload__progress">
                 <div className="upload__progress-bar" style={{ width: `${videoProgress}%` }}/>
@@ -189,7 +192,6 @@ export default function Upload() {
               </div>
             )}
 
-            {/* Thumbnail Dropzone */}
             <div
               className="dropzone dropzone--thumb"
               onClick={() => thumbInputRef.current?.click()}
@@ -212,13 +214,7 @@ export default function Upload() {
                   <p className="dropzone__sub">JPG, PNG, WebP</p>
                 </>
               )}
-              <input
-                ref={thumbInputRef}
-                type="file"
-                accept="image/*"
-                style={{ display: 'none' }}
-                onChange={handleThumbChange}
-              />
+              <input ref={thumbInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleThumbChange} />
             </div>
           </div>
 
@@ -248,16 +244,50 @@ export default function Upload() {
               />
             </div>
 
+            {/* ── Custom Dropdown (replaces broken native <select>) ── */}
             <div className="form-group">
               <label className="form-label"><Tag size={15}/> Category</label>
-              <select
-                className="form-input form-select"
-                value={form.category}
-                onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
-              >
-                <option value="">Select category...</option>
-                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+              <div className="custom-select" ref={dropdownRef}>
+                <button
+                  type="button"
+                  className={`custom-select__trigger ${dropdownOpen ? 'custom-select__trigger--open' : ''}`}
+                  onClick={() => setDropdownOpen(o => !o)}
+                  aria-haspopup="listbox"
+                  aria-expanded={dropdownOpen}
+                >
+                  <span className={form.category ? '' : 'custom-select__placeholder'}>
+                    {form.category || 'Select category...'}
+                  </span>
+                  <ChevronDown
+                    size={16}
+                    className="custom-select__chevron"
+                    style={{ transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                  />
+                </button>
+
+                {dropdownOpen && (
+                  <ul className="custom-select__list" role="listbox">
+                    <li
+                      className="custom-select__option custom-select__option--placeholder"
+                      role="option"
+                      onClick={() => { setForm(f => ({ ...f, category: '' })); setDropdownOpen(false); }}
+                    >
+                      Select category...
+                    </li>
+                    {CATEGORIES.map(cat => (
+                      <li
+                        key={cat}
+                        className={`custom-select__option ${form.category === cat ? 'custom-select__option--active' : ''}`}
+                        role="option"
+                        aria-selected={form.category === cat}
+                        onClick={() => { setForm(f => ({ ...f, category: cat })); setDropdownOpen(false); }}
+                      >
+                        {cat}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
 
             {/* Community Toggle */}
