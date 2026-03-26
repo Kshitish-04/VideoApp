@@ -135,18 +135,68 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      {menuOpen && (
-        <div className="navbar__mobile-menu">
-          <Link to="/" onClick={() => setMenuOpen(false)}>Home</Link>
-          <Link to="/community" onClick={() => setMenuOpen(false)}>Community</Link>
-          {user && <Link to="/upload" onClick={() => setMenuOpen(false)}>Upload</Link>}
-          {user && <Link to="/dashboard" onClick={() => setMenuOpen(false)}>Dashboard</Link>}
-          {!user && <Link to="/login" onClick={() => setMenuOpen(false)}>Sign In</Link>}
-          {!user && <Link to="/register" onClick={() => setMenuOpen(false)}>Get Started</Link>}
-          {user && <button onClick={handleSignOut}>Sign Out</button>}
+      {/* Mobile Sidebar Overlay */}
+      <div
+        className={`sidebar-overlay ${menuOpen ? 'sidebar-overlay--open' : ''}`}
+        onClick={() => setMenuOpen(false)}
+        aria-hidden="true"
+      />
+
+      {/* Mobile Sidebar */}
+      <aside className={`sidebar ${menuOpen ? 'sidebar--open' : ''}`}>
+        <div className="sidebar__header">
+          <Link to="/" className="navbar__logo" onClick={() => setMenuOpen(false)}>
+            <span className="navbar__logo-icon">▶</span>
+            <span className="navbar__logo-text">Lumina<span>Stream</span></span>
+          </Link>
+          <button className="sidebar__close" onClick={() => setMenuOpen(false)} aria-label="Close menu">
+            <X size={22} />
+          </button>
         </div>
-      )}
+
+        <nav className="sidebar__nav">
+          <Link to="/" className="sidebar__link" onClick={() => setMenuOpen(false)}>
+            <Play size={18} /> Home
+          </Link>
+          <Link to="/community" className="sidebar__link" onClick={() => setMenuOpen(false)}>
+            <Users size={18} /> Community
+          </Link>
+          {user && (
+            <Link to="/upload" className="sidebar__link" onClick={() => setMenuOpen(false)}>
+              <Upload size={18} /> Upload
+            </Link>
+          )}
+          {user && (
+            <Link to="/dashboard" className="sidebar__link" onClick={() => setMenuOpen(false)}>
+              <LayoutDashboard size={18} /> Dashboard
+            </Link>
+          )}
+        </nav>
+
+        <div className="sidebar__footer">
+          {user ? (
+            <>
+              <div className="sidebar__user">
+                <div className="navbar__avatar sidebar__avatar">
+                  {profile?.avatar_url
+                    ? <img src={profile.avatar_url} alt="avatar" />
+                    : <span>{initials}</span>
+                  }
+                </div>
+                <span className="sidebar__username">{profile?.username || 'User'}</span>
+              </div>
+              <button className="sidebar__signout" onClick={handleSignOut}>
+                <LogOut size={16} /> Sign Out
+              </button>
+            </>
+          ) : (
+            <div className="sidebar__auth">
+              <Link to="/login" className="btn btn--ghost btn--full" onClick={() => setMenuOpen(false)}>Sign In</Link>
+              <Link to="/register" className="btn btn--primary btn--full" onClick={() => setMenuOpen(false)}>Get Started</Link>
+            </div>
+          )}
+        </div>
+      </aside>
     </nav>
   );
 }
