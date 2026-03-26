@@ -5,7 +5,7 @@ import { Mail, Lock, User, Play, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function Register() {
-  const { signUp } = useAuth();
+  const { signUp, signIn } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ username: '', email: '', password: '', confirm: '' });
   const [showPass, setShowPass] = useState(false);
@@ -22,12 +22,22 @@ export default function Register() {
       return;
     }
     setLoading(true);
-    const { error } = await signUp(form.email, form.password, form.username);
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success('Account created! Check your email to confirm, then sign in.');
+    const { error: signUpError } = await signUp(form.email, form.password, form.username);
+    if (signUpError) {
+      toast.error(signUpError.message);
+      setLoading(false);
+      return;
+    }
+
+    // Auto-login immediately after signup (requires email confirmation disabled in Supabase)
+    const { error: signInError } = await signIn(form.email, form.password);
+    if (signInError) {
+      // Fallback: Supabase may still require confirmation
+      toast.success('Account created! Please sign in.');
       navigate('/login');
+    } else {
+      toast.success('Welcome to LuminaStream! 🎉');
+      navigate('/');
     }
     setLoading(false);
   };
